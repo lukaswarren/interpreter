@@ -1,4 +1,5 @@
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS','EOF'
+#import type
+INTEGER, PLUS, MINUS, MULTIPLY, DIVIDE, EOF = 'INTEGER', 'PLUS', 'MINUS', 'MULTIPLY', 'DIVIDE','EOF'
 
 class Token(object):
     def __init__(self, type, value):
@@ -11,14 +12,11 @@ class Token(object):
     def __repr__(self) -> str:
         return self.value.__str__()
 
-    
-
-class Interpreter(object):
+class Lexer(object):
     def __init__(self, text):
         self.text = text
         self.position = 0
         self.current_token = None
-        
 
     def error(self):
         raise Exception('Error parsing input')
@@ -34,11 +32,7 @@ class Interpreter(object):
             else:
                return result
         return result
-           
-
-           
-
-    
+             
     def get_next_token(self):
         text = self.text
 
@@ -60,15 +54,26 @@ class Interpreter(object):
         elif character == '-':
             self.position += 1
             return Token(MINUS, "-")
+        elif character == '*':
+            self.position += 1
+            return Token(MULTIPLY, "*")
+        elif character == '/':
+            self.position += 1
+            return Token(DIVIDE, "/")
         elif character.isdigit():
             result =  self.get_integer(text, character)
             return Token(INTEGER, int(result))
         
-        self.error()
+        self.error()   
 
+class Interpreter(object):
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.current_token = self.lexer.get_next_token()
+        
     def advance(self, token_type):
         if self.current_token.type == token_type:
-            self.current_token = self.get_next_token()
+            self.current_token = self.lexer.get_next_token()
         else:
             self.error()
 
@@ -78,17 +83,30 @@ class Interpreter(object):
         self.advance(INTEGER)
         return token.value
 
+    def term(self):
+        result = self.operand()
+        while self.current_token.type in (MULTIPLY, DIVIDE):
+            token = self.current_token
+            if token.type == MULTIPLY:
+                self.advance(MULTIPLY)
+                result = result * self.operand()
+            elif token.type == DIVIDE:
+                self.advance(DIVIDE)
+                result = result / self.operand()
+        return result
+
+
     def eval(self):
-        self.current_token = self.get_next_token()
-        evaluation = self.operand()
+        
+        evaluation = self.term()
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
             if token.type == PLUS:
                 self.advance(PLUS) #Moves past the plus
-                evaluation += self.operand() #Returns the value of the next operand AND advances
+                evaluation += self.term() #Returns the value of the next operand AND advances
             elif token.type == MINUS:
                 self.advance(MINUS)
-                evaluation -= self.operand()
+                evaluation -= self.term()
         return evaluation
     
 def main():
@@ -100,7 +118,8 @@ def main():
             break
         if not expression:
             continue
-        interpreter = Interpreter(expression)
+        lexer = Lexer(expression)
+        interpreter = Interpreter(lexer)
         result = interpreter.eval()
         print(result)
 
