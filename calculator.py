@@ -1,5 +1,5 @@
 #import type
-INTEGER, PLUS, MINUS, MULTIPLY, DIVIDE, EOF = 'INTEGER', 'PLUS', 'MINUS', 'MULTIPLY', 'DIVIDE','EOF'
+INTEGER, PLUS, MINUS, MULTIPLY, DIVIDE, LPAREN, RPAREN, EOF = 'INTEGER', 'PLUS', 'MINUS', 'MULTIPLY', 'DIVIDE', 'LPAREN', 'RPAREN','EOF'
 
 class Token(object):
     def __init__(self, type, value):
@@ -60,6 +60,12 @@ class Lexer(object):
         elif character == '/':
             self.position += 1
             return Token(DIVIDE, "/")
+        elif character == '(':
+            self.position += 1
+            return Token(LPAREN, "(")
+        elif character == ')':
+            self.position += 1
+            return Token(RPAREN, ")")
         elif character.isdigit():
             result =  self.get_integer(text, character)
             return Token(INTEGER, int(result))
@@ -80,8 +86,15 @@ class Interpreter(object):
     def operand(self):
         #Grabs the operand and advances the token returning the operand
         token = self.current_token
-        self.advance(INTEGER)
-        return token.value
+
+        if token.type == LPAREN:
+            self.advance(LPAREN)
+            result = self.eval()
+            self.advance(RPAREN)
+            return result
+        else:
+            self.advance(INTEGER)
+            return token.value
 
     def term(self):
         result = self.operand()

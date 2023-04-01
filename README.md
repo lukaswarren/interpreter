@@ -6,3 +6,9 @@ To run this have Python installed.  In terminal navigate to project directory an
 
 # Resources
 Built by following along with https://ruslanspivak.com/lsbasi-part1/
+
+# Background
+This interpreter uses grammars to evaluate expression, some recursive:
+    operand :  INTEGER | LPAREN eval RPAREN
+    term : operand \(\(MULTIPLY | DIVIDE\) operand\)
+    eval : term \(\(PLUS | MINUS\) term\)
