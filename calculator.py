@@ -72,7 +72,21 @@ class Lexer(object):
         
         self.error()   
 
-class Interpreter(object):
+class SyntaxTree(object):
+    pass
+
+class BinaryOp(SyntaxTree):
+    def __init__(self, left, op, right):
+        self.left = left
+        self.token = self.op = op
+        self.right = right
+
+class Num(SyntaxTree):
+    def __init__(self, token):
+        self.token = token
+        self.value = token.value
+
+class Parser(object):
     def __init__(self, lexer):
         self.lexer = lexer
         self.current_token = self.lexer.get_next_token()
@@ -89,39 +103,70 @@ class Interpreter(object):
 
         if token.type == LPAREN:
             self.advance(LPAREN)
-            result = self.eval()
+            node = self.parse()
             self.advance(RPAREN)
-            return result
+            return node
         else:
             self.advance(INTEGER)
-            return token.value
+            return Num(token)
 
     def term(self):
-        result = self.operand()
+        node = self.operand()
         while self.current_token.type in (MULTIPLY, DIVIDE):
             token = self.current_token
             if token.type == MULTIPLY:
-                self.advance(MULTIPLY)
-                result = result * self.operand()
+                self.advance(MULTIPLY)                
             elif token.type == DIVIDE:
-                self.advance(DIVIDE)
-                result = result / self.operand()
-        return result
+                self.advance(DIVIDE)               
+            node = BinaryOp(node, token, self.operand())
+        return node
 
 
-    def eval(self):
+    def parse(self):
         
-        evaluation = self.term()
+        node = self.term()
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
             if token.type == PLUS:
                 self.advance(PLUS) #Moves past the plus
-                evaluation += self.term() #Returns the value of the next operand AND advances
             elif token.type == MINUS:
                 self.advance(MINUS)
-                evaluation -= self.term()
-        return evaluation
+            node = BinaryOp(node, token, self.term())
+        return node
+
+class NodeVisitor(object):
+    def visit(self, node):
+        method_name = 'visit_' + type(node).__name__
+        visitor = getattr(self, method_name, self.generic_visit)
+        return visitor(node)
+
+    def generic_visit(self, node):
+        raise Exception('No visit_{} method'.format(type(node).__name__))
+
+
+class Interpreter(NodeVisitor):
+    def __init__(self, parser):
+        self.parser = parser
+
+    def visit_BinaryOp(self, node):
+        if node.op.type == PLUS:
+            return self.visit(node.left) + self.visit(node.right)
+        elif node.op.type == MINUS:
+            return self.visit(node.left) - self.visit(node.right)
+        elif node.op.type == MULTIPLY:
+            return self.visit(node.left) * self.visit(node.right)
+        elif node.op.type == DIVIDE:
+            return self.visit(node.left) / self.visit(node.right)
+        
+    def visit_Num(self, node):
+        return node.value
     
+    def interpret(self):
+        tree = self.parser.parse()
+        return self.visit(tree)
+        
+
+
 def main():
     while True:
         try:
@@ -132,8 +177,9 @@ def main():
         if not expression:
             continue
         lexer = Lexer(expression)
-        interpreter = Interpreter(lexer)
-        result = interpreter.eval()
+        parser = Parser(lexer)
+        interpreter = Interpreter(parser)
+        result = interpreter.interpret()
         print(result)
 
 if __name__ == '__main__':
