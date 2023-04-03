@@ -11,7 +11,7 @@ Built by following along with https://ruslanspivak.com/lsbasi-part1/
 This Parser uses grammars to parse the expression correctly, some recursive:
     
 <ul>
-<li> operand :  INTEGER | LPAREN eval RPAREN </li> 
+<li> operand : (PLUS|MINUS) operand | INTEGER | LPAREN eval RPAREN </li> 
 <li> term : operand ((MULTIPLY | DIVIDE) operand) </li> 
 <li> eval : term ((PLUS | MINUS) term) </li> 
 </ul>
