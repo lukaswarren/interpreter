@@ -81,6 +81,11 @@ class BinaryOp(SyntaxTree):
         self.token = self.op = op
         self.right = right
 
+class UnaryOp(SyntaxTree):
+    def __init__(self, op, child):
+        self.token = self.op = op
+        self.child = child
+
 class Num(SyntaxTree):
     def __init__(self, token):
         self.token = token
@@ -106,6 +111,12 @@ class Parser(object):
             node = self.parse()
             self.advance(RPAREN)
             return node
+        elif token.type == PLUS:
+            self.advance(PLUS)
+            return UnaryOp(token, self.operand())
+        elif token.type == MINUS:
+            self.advance(MINUS)
+            return UnaryOp(token, self.operand())
         else:
             self.advance(INTEGER)
             return Num(token)
@@ -157,6 +168,13 @@ class Interpreter(NodeVisitor):
             return self.visit(node.left) * self.visit(node.right)
         elif node.op.type == DIVIDE:
             return self.visit(node.left) / self.visit(node.right)
+        
+    def visit_UnaryOp(self, node):
+        if node.op.type == PLUS:
+            return self.visit(node.child) 
+        elif node.op.type == MINUS:
+            return -1 * self.visit(node.child) 
+
         
     def visit_Num(self, node):
         return node.value
