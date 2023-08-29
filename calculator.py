@@ -2,6 +2,7 @@ from lexer import Lexer
 from parsers import Parser
 from interpreters import Interpreter
 
+
 def main():
     while True:
         try:
@@ -17,7 +18,6 @@ def main():
         result = interpreter.interpret()
         print(result)
 
+
 if __name__ == '__main__':
     main()
-
-    
